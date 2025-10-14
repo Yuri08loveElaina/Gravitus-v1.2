@@ -15,7 +15,7 @@ Gravitus is a NodeJS DDoS Tool Made by **m85.68**
 -  **Bypass** - Bypass Cloudflare Protection Easily (Will be Adding Soon)
 
 ## Usage : 
-     node gravitus.js https://example.com 120 30 10 proxy.txt 
+     node Gravitus.js GET/POST https://example.com 120 94 10 proxy.txt --flood --debug --full --http 2 
 
 ## Installations :
      git clone https://github.com/iamthebestm85/Gravitus-v1.2.git
