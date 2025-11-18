@@ -49,11 +49,22 @@ on:
         default: '100'
 
 jobs:
+  generate-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+    - name: Generate matrix
+      id: set-matrix
+      run: |
+        MATRIX=$(printf '{"run":['; for i in $(seq 1 ${{ inputs.parallel_runs }}); do printf '"%d"' $i; if [ $i -lt ${{ inputs.parallel_runs }} ]; then printf ','; fi; done; printf ']}')
+        echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
+
   run-gravitus:
+    needs: generate-matrix
     runs-on: ubuntu-latest
     strategy:
-      matrix:
-        run: ${{ fromJson(format('[{0}]', repeat('0,', inputs.parallel_runs))) }}
+      matrix: ${{ fromJson(needs.generate-matrix.outputs.matrix) }}
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
